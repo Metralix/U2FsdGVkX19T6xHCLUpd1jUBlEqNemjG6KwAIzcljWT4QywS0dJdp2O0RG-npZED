@@ -56,7 +56,6 @@ def readPicture(folder_path=r"C:\Users\54164\Desktop\LRA_GL\dataset_CASIA"):
     return train_vis,train_nir,test_vis,test_nir
 
 
-
 """
 lbp encode the picture set
 input:picture sets of 2d or 3d reality photos
