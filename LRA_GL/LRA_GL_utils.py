@@ -10,6 +10,7 @@ import math
 import matplotlib.pyplot as plt  
 import matplotlib.image as mpimg  
 import os
+import cv2
 
 """
 function:read the picture from the os folder
@@ -22,8 +23,9 @@ def readPicture(folder_path=r"C:\Users\54164\Desktop\LRA_GL\dataset_CASIA"):
     for i in range(30840):
         train_vis_path = os.path.join(folder_path,'train_vis','{0:05d}.jpg'.format(i+1))
         if os.path.exists(train_vis_path):
-            I = mpimg.imread(train_vis_path)  
-            train_vis.append(rgb2gray(I))
+            #I = mpimg.imread(train_vis_path)  
+            I = cv2.imread(train_vis_path,cv2.IMREAD_GRAYSCALE)
+            train_vis.append(I)
     print("readed train_vis")
     #读取 train_nir 训练的黑白照片 
     train_nir = []
@@ -33,7 +35,8 @@ def readPicture(folder_path=r"C:\Users\54164\Desktop\LRA_GL\dataset_CASIA"):
         if os.path.exists(path_a):
             for c in suffix:
                 path_all = os.path.join(folder_path,'train_nir','{0:05d}_{1}.jpg'.format(i+1,c))
-                I = mpimg.imread(path_all)  
+                #I = mpimg.imread(path_all)  
+                I = cv2.imread(path_all,cv2.IMREAD_GRAYSCALE)
                 train_nir.append(I)
     print("readed train_nir")
     #读取 test_vis gallary 测试的彩照  
@@ -41,19 +44,22 @@ def readPicture(folder_path=r"C:\Users\54164\Desktop\LRA_GL\dataset_CASIA"):
     for i in range(30840):
         test_vis_path = os.path.join(folder_path,'test_vis','{0:05d}.jpg'.format(i+1))
         if os.path.exists(test_vis_path):
-            I = mpimg.imread(test_vis_path)  
-            test_vis.append(rgb2gray(I))
+            #I = mpimg.imread(test_vis_path)  
+            I = cv2.imread(test_vis_path,cv2.IMREAD_GRAYSCALE)
+            test_vis.append(I)
     print("readed test_vis")
     #读取 test_nir probe 测试的黑白照
     test_nir = []
     for i in range(30840):
         test_nir_path = os.path.join(folder_path,'test_nir','{0:05d}.jpg'.format(i+1))
         if os.path.exists(test_nir_path):
-            I = mpimg.imread(test_nir_path)  
+            #I = mpimg.imread(test_nir_path)  
+            I = cv2.imread(test_nir_path,cv2.IMREAD_GRAYSCALE)
             test_nir.append(I)
     
     print("readed test_nir")        
-    return train_vis,train_nir,test_vis,test_nir
+    return np.array(train_vis),np.array(train_nir),np.array(test_vis),np.array(test_nir)
+
 
 
 """
@@ -93,11 +99,16 @@ def lbp_encode(picture_set,cell_size=20):
                 hist_idx += 1
         hist = hist/(height*width)
         hist = hist.reshape([256*cell_size*cell_size,1])
+        # normalized to zeros mean and unit length. 
+        hist = hist - np.mean(hist)
+        sum_square = math.sqrt(np.sum(hist**2))
+        hist = hist/sum_square
+        
         if i == 0:
             coverted_matrix = hist.copy()
         else:
             coverted_matrix = np.hstack((coverted_matrix,hist.copy()))
-
+        
     return coverted_matrix
                         
 """
@@ -107,12 +118,12 @@ output:get the intro_class variant of the trian datasets
        the out size is the same as a 840*480 gary picture
 """
 def intro_class_variant(vis_pics,nir_pics):
-	variant_set = []
-	for i in range(nir_pics.shape[0]):
-		pic = nir_pics[i,:,:]-vis_pics[i//5,:,:]
-		variant_set.append(pic.copy())
-
-	return np.array(variant_set)
+    variant_set = []
+    for i in range(nir_pics.shape[0]):
+        pic = nir_pics[i,:,:]-vis_pics[i//5,:,:]
+        #pic = vis_pics[i//5,:,:] - nir_pics[i,:,:]
+        variant_set.append(pic.copy())
+    return np.array(variant_set)
 
 """
 input:result matrix of the algorithm
@@ -155,9 +166,31 @@ def calculate_accuracy_top5(res_matrix):
     for i in range(res_matrix.shape[1]):
         if res_matrix[i,i] == 1:
             correct_cnt += 1
+        else:
+            print("no.{}th pic is wrong!!!".format(i))
     
     return correct_cnt / res_matrix.shape[1]
 
+def calculate_accuracy_top10(res_matrix):
+    res_matrix = res_matrix + 10
+    #max_list = np.max(res_matrix,axis=0)
+    
+    max5_list = []
+    for i in range(res_matrix.shape[1]):
+        cow_list = res_matrix[:,i].copy()
+        cow_list.sort()
+        max5_list.append(cow_list[res_matrix.shape[0]-10])
+    
+    for i in range(res_matrix.shape[1]):
+        res_matrix[:,i] = res_matrix[:,i]-max5_list[i]+1e-5
+    
+    res_matrix = res_matrix >= 0
+    correct_cnt = 0
+    for i in range(res_matrix.shape[1]):
+        if res_matrix[i,i] == 1:
+            correct_cnt += 1
+    
+    return correct_cnt / res_matrix.shape[1]
 
 """
 transform the RGB pattern into gray
