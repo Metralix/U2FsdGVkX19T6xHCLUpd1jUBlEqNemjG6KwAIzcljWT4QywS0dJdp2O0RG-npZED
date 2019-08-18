@@ -12,21 +12,22 @@ import data_pre_process as dprocess
 
 time_start=time.time()
 
-train_vis,train_nir,test_vis,test_nir =utils.readPicture(folder_path="./dataset_CASIA")
+#train_vis,train_nir,test_vis,test_nir =utils.readPicture(folder_path="./dataset_CASIA")
+
 #train_vis = np.load('train_vis.npy')
 #train_nir = np.load('train_nir.npy')
 #test_vis = np.load('test_vis.npy')
 #test_nir = np.load('test_nir.npy')
 
-pre process the pictures
-dprocess.cut_face_into_folder(train_vis,"train_vis_face")
-dprocess.cut_face_into_folder(train_nir,"train_nir_face")
-dprocess.cut_face_into_folder(test_vis,"test_vis_face")
-dprocess.cut_face_into_folder(test_nir,"test_nir_face")
+#pre process the pictures
+#dprocess.cut_face_into_folder(train_vis,"train_vis_face")
+#dprocess.cut_face_into_folder(train_nir,"train_nir_face")
+#dprocess.cut_face_into_folder(test_vis,"test_vis_face")
+#dprocess.cut_face_into_folder(test_nir,"test_nir_face")
 
 train_vis_face,train_nir_face,test_vis_face,test_nir_face = dprocess.reload_new_faces()
 
-
+dprocess.rename_pictures()
 
 k = test_nir_face.shape[0]
 m = train_nir_face.shape[0]
